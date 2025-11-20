@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.citasalud.demo.client.DisponibilidadesClient;
 import com.citasalud.demo.models.dtos.BloqueoOperativoDTORequest;
 import com.citasalud.demo.models.dtos.BloqueoOperativoDTOResponse;
 import com.citasalud.demo.models.jpaEntitys.BloqueoOperativo;
@@ -15,9 +16,12 @@ import jakarta.transaction.Transactional;
 public class BloqueoOperativoService {
 
     private final BloqueoOperativoRepository repository;
+    private final DisponibilidadesClient disponibilidadesClient;
 
-    public BloqueoOperativoService(BloqueoOperativoRepository repository) {
+    public BloqueoOperativoService(BloqueoOperativoRepository repository,
+                                   DisponibilidadesClient disponibilidadesClient) {
         this.repository = repository;
+        this.disponibilidadesClient = disponibilidadesClient;
     }
     
     @Transactional
@@ -34,9 +38,13 @@ public class BloqueoOperativoService {
         // Guardar en BD
         entidad = repository.save(entidad);
 
-        // 🔜 Lógica futura:
-        // inactivarDisponibilidades(dto.idProfesional(), dto.fechaInicio(), dto.fechaFin());
-        // (la haremos cuando terminemos este microservicio)
+        // Llamar al microservicio para inhabilitar disponibilidades
+        disponibilidadesClient.inactivarDisponibilidadesPorBloqueo(
+            dto.idProfesional(),
+            dto.fechaInicio(),
+            dto.fechaFin()
+        );
+
         return toResponse(entidad);
     }
 
