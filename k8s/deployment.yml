@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: citasalud-bloqueos-api
+  labels:
+    app: citasalud-bloqueos-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: citasalud-bloqueos-api
+  template:
+    metadata:
+      labels:
+        app: citasalud-bloqueos-api
+    spec:
+      containers:
+      - name: citasalud-bloqueos-api
+        image: citasalud-bloqueos-api:latest
+        imagePullPolicy: Never  # Cambia de Always a Never
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://ep-rough-star-a4zns40a-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "neondb_owner"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "npg_vaobU1h8cJqL"
+        - name: MICROSERVICES_DISPONIBILIDADES_URL
+          value: "http://citasalud-disponibilidades-service:80"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/bloqueos-operativos
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/bloqueos-operativos
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: citasalud-bloqueos-api-service
+  labels:
+    app: citasalud-bloqueos-api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: citasalud-bloqueos-api
